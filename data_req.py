@@ -4,13 +4,12 @@ import pydantic
 
 @dataclass
 class Product:
+    page_no: int
     manufacturer: str
     title: str
     price: str
     description: str
-    #page_no: Optional[int]
-    
 
-    
+
 if __name__ == "__main__":
     None

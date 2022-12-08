@@ -15,7 +15,7 @@ from selectolax.parser import HTMLParser
 from dataclasses import asdict
 
 from data_req import Product
-from utils import flatten_lists, print_section
+from utils import flatten_lists, print_section, validate_dir
 
 #############################################
 #   ___ _____ _   _  _ ___   _   ___ ___    #
@@ -28,7 +28,7 @@ from utils import flatten_lists, print_section
 PATH_CWD = Path.cwd()
 PATH_OUTPUT = PATH_CWD / "output"
 
-FILE_OUTPUT = PATH_CWD / "products.csv"
+FILE_OUTPUT = PATH_OUTPUT / "products.csv"
 
 EXPORT_CSV = True
 VERBOSE = True
@@ -51,11 +51,12 @@ def get_thomann_html(page_no:int = 1) -> HTMLParser:
     response = httpx.get(url)
     return HTMLParser(response.text)
 
-def parse_product(html: HTMLParser) -> List[dict]:
+def parse_product(html: HTMLParser, page_number: int) -> List[dict]:
     products = html.css("div.product")
     results = []
     for item in products:
         new_item = Product(
+            page_no = page_number,
             manufacturer = item.css_first("span.title__manufacturer").text(),
             title = item.css_first("span.title__name").text(),
             description = item.css_first("div.product__description").text().strip(),
@@ -73,12 +74,13 @@ def parse_product(html: HTMLParser) -> List[dict]:
 #                                    #
 ######################################
 
+import matplotlib.pyplot as plt
 
 def main() -> None:
     results = []
-    for page in range(1,PAGE_END+1):
-        html = get_thomann_html(page)
-        result = parse_product(html)
+    for page_no in range(1,PAGE_END+1):
+        html = get_thomann_html(page_no)
+        result = parse_product(html, page_no)
         results.append(result)
         
     # Process data and transfer to dataframe
@@ -94,5 +96,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     print_section("File Commencing")
+    validate_dir(PATH_OUTPUT)
+    
     main()
     print_section("File Commenced")
