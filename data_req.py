@@ -7,13 +7,10 @@ class Product:
     manufacturer: str
     title: str
     price: str
-    
-    #description: str
+    description: str
     #page_no: Optional[int]
     
 
-# Description
-# Page no: Optional[int]
-
+    
 if __name__ == "__main__":
     None

@@ -15,7 +15,7 @@ from selectolax.parser import HTMLParser
 from dataclasses import asdict
 
 from data_req import Product
-from utils import flatten_lists
+from utils import flatten_lists, print_section
 
 #############################################
 #   ___ _____ _   _  _ ___   _   ___ ___    #
@@ -27,11 +27,15 @@ from utils import flatten_lists
 
 PATH_CWD = Path.cwd()
 PATH_OUTPUT = PATH_CWD / "output"
-FILE_OUTPUT = PATH_OUTPUT / "products.csv"
 
-EXPORT_CSV = False
+FILE_OUTPUT = PATH_CWD / "products.csv"
+
+EXPORT_CSV = True
 VERBOSE = True
 TEST = True
+
+# Extract til what page
+PAGE_END = 3
 
 #########################################################
 #   ___  ___ ___ ___ _  _ ___ _____ ___ ___  _  _ ___   #
@@ -54,6 +58,7 @@ def parse_product(html: HTMLParser) -> List[dict]:
         new_item = Product(
             manufacturer = item.css_first("span.title__manufacturer").text(),
             title = item.css_first("span.title__name").text(),
+            description = item.css_first("div.product__description").text().strip(),
             price = item.css_first("div.product__price").text().strip()
         )
         results.append(asdict(new_item))
@@ -71,7 +76,7 @@ def parse_product(html: HTMLParser) -> List[dict]:
 
 def main() -> None:
     results = []
-    for page in range(1,4):
+    for page in range(1,PAGE_END+1):
         html = get_thomann_html(page)
         result = parse_product(html)
         results.append(result)
@@ -81,15 +86,13 @@ def main() -> None:
     df_products = pd.DataFrame.from_dict(flattened_results)
     
     if VERBOSE:
-        print(df_products.head(10))
+        print(df_products.head(5))
     
     if EXPORT_CSV:
-        df_products.to_csv(PATH_OUTPUT)
+        df_products.to_csv(FILE_OUTPUT)
         
 
 if __name__ == "__main__":
+    print_section("File Commencing")
     main()
-    
-    print("-"*50)
-    print("File Executed... ")
-    print("-"*50)
+    print_section("File Commenced")
