@@ -32,15 +32,16 @@ def parse_product(html):
 
 def main():
     
-    results = []
-    for x in range(1,4):
-        html = get_html(x)
-        print(html.css_first("title").text())
-        res = parse_product(html)
-        results.append(res)
+    #results = []
+    #for x in range(1,4):
+    html = get_html(1)
+    print(html.css_first("title").text())
+    res = parse_product(html)
+    #results.append(res)
         
-    sample = pd.DataFrame.from_dict(results)
-    print(sample.head(10))
+    sample = pd.DataFrame.from_dict(res)
+    sample.to_csv("sample.csv")
+    #print(sample.head(10))
 
 if __name__ == "__main__":
     main()
