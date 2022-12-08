@@ -14,3 +14,6 @@ class Product:
 
 # Description
 # Page no: Optional[int]
+
+if __name__ == "__main__":
+    None

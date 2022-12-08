@@ -15,6 +15,7 @@ from selectolax.parser import HTMLParser
 from dataclasses import asdict
 
 from data_req import Product
+from utils import flatten_lists
 
 #############################################
 #   ___ _____ _   _  _ ___   _   ___ ___    #
@@ -59,10 +60,6 @@ def parse_product(html: HTMLParser) -> List[dict]:
     return results
 
 
-def flatten_lists(x: List[list]) -> List[dict]:
-    return sum(x, [])
-
-
 ######################################
 #   ___ ___  ___   ___ ___ ___ ___   #
 #  | _ | _ \/ _ \ / __| __/ __/ __|  # 
@@ -71,54 +68,27 @@ def flatten_lists(x: List[list]) -> List[dict]:
 #                                    #
 ######################################
 
-from pprint import pprint 
 
-# def test() -> None:
-#     results = []
-#     for page in range(1,3):
-#         print("-"*50)
-#         print(f"Page No... \t{page}")
-#         html = get_thomann_html(page)
-#         result = parse_product(html)
-#         results.append(result)
-        
-# WORKING
-def test() -> None:
+def main() -> None:
     results = []
     for page in range(1,4):
         html = get_thomann_html(page)
         result = parse_product(html)
         results.append(result)
         
-    flattened = flatten_lists(results)
-    df_products = pd.DataFrame.from_dict(flattened)
-    print(df_products.shape[0])
-    #pprint(flattened)
+    # Process data and transfer to dataframe
+    flattened_results = flatten_lists(results)
+    df_products = pd.DataFrame.from_dict(flattened_results)
     
-
-def main() -> None:
-    # Given page number get the items in the page.
-    html = get_thomann_html(2)
-    result = parse_product(html)
-    
-    # Transfer to pandas dataframe then csv.
-    df_products = pd.DataFrame.from_dict(result)
-    
-    # Check Data
     if VERBOSE:
-        print(df_products.head(20))
-        print(f"Data Rows: \t{df_products.shape[0]}")
-        
-    # Export Data
+        print(df_products.head(10))
+    
     if EXPORT_CSV:
         df_products.to_csv(PATH_OUTPUT)
         
 
 if __name__ == "__main__":
-    if TEST:
-        test()
-    else:
-        main()
+    main()
     
     print("-"*50)
     print("File Executed... ")
