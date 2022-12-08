@@ -6,13 +6,15 @@
 #                                        #
 ##########################################
 
-#########################################################
-#   ___  ___ ___ ___ _  _ ___ _____ ___ ___  _  _ ___   #
-#  |   \| __| __|_ _| \| |_ _|_   _|_ _/ _ \| \| / __|  #
-#  | |) | _|| _| | || .` || |  | |  | | (_) | .` \__ \  #
-#  |___/|___|_| |___|_|\_|___| |_| |___\___/|_|\_|___/  #
-#                                                       #
-#########################################################
+import pandas as pd
+from pathlib import Path
+from typing import List
+
+import httpx
+from selectolax.parser import HTMLParser
+from dataclasses import asdict
+
+from data_req import Product
 
 #############################################
 #   ___ _____ _   _  _ ___   _   ___ ___    #
@@ -22,48 +24,30 @@
 #                                           #
 #############################################
 
-######################################
-#   ___ ___  ___   ___ ___ ___ ___   #
-#  | _ | _ \/ _ \ / __| __/ __/ __|  # 
-#  |  _|   | (_) | (__| _|\__ \__ \  #
-#  |_| |_|_\\___/ \___|___|___|___/  #
-#                                    #
-######################################
+PATH_CWD = Path.cwd()
+PATH_OUTPUT = PATH_CWD / "output"
+FILE_OUTPUT = PATH_OUTPUT / "products.csv"
 
+EXPORT_CSV = False
+VERBOSE = True
+TEST = True
 
-import httpx
-from selectolax.parser import HTMLParser
-from dataclasses import dataclass, asdict
+#########################################################
+#   ___  ___ ___ ___ _  _ ___ _____ ___ ___  _  _ ___   #
+#  |   \| __| __|_ _| \| |_ _|_   _|_ _/ _ \| \| / __|  #
+#  | |) | _|| _| | || .` || |  | |  | | (_) | .` \__ \  #
+#  |___/|___|_| |___|_|\_|___| |_| |___\___/|_|\_|___/  #
+#                                                       #
+#########################################################
 
-from pprint import pprint
-import pandas as pd
-
-@dataclass
-class Product:
-    manufacturer: str
-    title: str
-    price: str
     
-def get_html(page):
-    url = f"https://www.thomann.de/gb/search_GF_electric_guitars.html?ls=100&og={page}&hl=BLOWOUT"
-    resp = httpx.get(url)
-    return HTMLParser(resp.text)
-
-
-
-def get_thomann_html(page_no:int=1) -> HTMLParser:
-    # Convert the integer input into string.
-    if isinstance(page_no, int):
-        page_no = str(page_no)
-    
+def get_thomann_html(page_no:int = 1) -> HTMLParser:
     url = f"https://www.thomann.de/gb/search_GF_electric_guitars.html?ls=100&og={page_no}&hl=BLOWOUT"
     response = httpx.get(url)
-    return HTMLParser(response)
+    return HTMLParser(response.text)
 
-
-def parse_product(html):
+def parse_product(html: HTMLParser) -> List[dict]:
     products = html.css("div.product")
-    
     results = []
     for item in products:
         new_item = Product(
@@ -74,25 +58,67 @@ def parse_product(html):
         results.append(asdict(new_item))
     return results
 
-EXPORT_CSV = False
 
+def flatten_lists(x: List[list]) -> List[dict]:
+    return sum(x, [])
+
+
+######################################
+#   ___ ___  ___   ___ ___ ___ ___   #
+#  | _ | _ \/ _ \ / __| __/ __/ __|  # 
+#  |  _|   | (_) | (__| _|\__ \__ \  #
+#  |_| |_|_\\___/ \___|___|___|___/  #
+#                                    #
+######################################
+
+from pprint import pprint 
+
+# def test() -> None:
+#     results = []
+#     for page in range(1,3):
+#         print("-"*50)
+#         print(f"Page No... \t{page}")
+#         html = get_thomann_html(page)
+#         result = parse_product(html)
+#         results.append(result)
+        
+# WORKING
+def test() -> None:
+    results = []
+    for page in range(1,4):
+        html = get_thomann_html(page)
+        result = parse_product(html)
+        results.append(result)
+        
+    flattened = flatten_lists(results)
+    df_products = pd.DataFrame.from_dict(flattened)
+    print(df_products.shape[0])
+    #pprint(flattened)
+    
 
 def main() -> None:
-    
     # Given page number get the items in the page.
-    html = get_html(1)
+    html = get_thomann_html(2)
     result = parse_product(html)
     
     # Transfer to pandas dataframe then csv.
-    df = pd.DataFrame.from_dict(result)
-    if EXPORT_CSV:
-        df.to_csv("sample.csv")
-        
-    print(df.head(20))
+    df_products = pd.DataFrame.from_dict(result)
     
+    # Check Data
+    if VERBOSE:
+        print(df_products.head(20))
+        print(f"Data Rows: \t{df_products.shape[0]}")
+        
+    # Export Data
+    if EXPORT_CSV:
+        df_products.to_csv(PATH_OUTPUT)
+        
 
 if __name__ == "__main__":
-    main()
+    if TEST:
+        test()
+    else:
+        main()
     
     print("-"*50)
     print("File Executed... ")
