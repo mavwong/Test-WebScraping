@@ -25,8 +25,8 @@ from utils import flatten_lists, print_section, validate_dir
 #                                           #
 #############################################
 
-PATH_CWD = Path.cwd()
-PATH_OUTPUT = PATH_CWD / "output"
+PATH_FILE = Path(__file__).parent
+PATH_OUTPUT = PATH_FILE / "output"
 
 FILE_OUTPUT = PATH_OUTPUT / "products.csv"
 
@@ -74,7 +74,6 @@ def parse_product(html: HTMLParser, page_number: int) -> List[dict]:
 #                                    #
 ######################################
 
-import matplotlib.pyplot as plt
 
 def main() -> None:
     results = []
