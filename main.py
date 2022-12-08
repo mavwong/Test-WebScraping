@@ -1,79 +1,46 @@
-import string
-import json
-import pydantic
+import httpx
+from selectolax.parser import HTMLParser
+from dataclasses import dataclass, asdict
+
+from pprint import pprint
 import pandas as pd
 
-from typing import List, Optional
-from pathlib import Path
-
-# Existing Path
-path_cwd = Path.cwd()
-path_data = path_cwd / "data"
-path_output = path_cwd / "output"
-
-# Output File
-file_output = path_output / "users.csv"
-
-# Existing Files
-file_json_a = path_data / "data.json"
-file_json_b = path_data / "test_data_0001.json"
-file_json_c = path_data / "test_data_0002.json"
-
-# Current file to be tested
-current_file = file_json_b
-
-# Validation Class
-class ValidateUser(pydantic.BaseModel):
-    username: str
-    password: str
-    gender: str
-    age: int
-    birthday: str
+@dataclass
+class Product:
+    manufacturer: str
+    title: str
+    price: str
     
-    @pydantic.validator("username")
-    @classmethod
-    def validate_username(cls, value):
-        if any(p in value for p in string.punctuation):
-            raise ValueError("Username must not include punctuation or special characters.")
-        else:
-            return value
+def get_html(page):
+    url = f"https://www.thomann.de/gb/search_GF_electric_guitars.html?ls=100&og={page}&hl=BLOWOUT"
+    resp = httpx.get(url)
+    return HTMLParser(resp.text)
+
+def parse_product(html):
+    products = html.css("div.product")
+    
+    results = []
+    for item in products:
+        new_item = Product(
+            manufacturer = item.css_first("span.title__manufacturer").text(),
+            title = item.css_first("span.title__name").text(),
+            price = item.css_first("div.product__price").text().strip()
+        )
+        results.append(asdict(new_item))
+    return results
+
+
+def main():
+    
+    results = []
+    for x in range(1,4):
+        html = get_html(x)
+        print(html.css_first("title").text())
+        res = parse_product(html)
+        results.append(res)
         
-    @pydantic.validator("password")
-    @classmethod
-    def validate_password(cls, value):
-        if len(value) < 8:
-            raise ValueError("Password must be atleast 8 characters long.")
-        if any(p in value for p in string.punctuation):
-            if any(d in value for d in string.digits):
-                if any(l in value for l in string.ascii_lowercase):
-                    if any(u in value for u in string.ascii_uppercase):
-                        return value
-        raise ValueError("Password needs at least one punctuation symbol, digit, upper and lower case string.")
-
-
-def main() -> None:
-    """ Main function. """
-
-    # Read data from a JSON file
-    with open(current_file) as file:
-        datas = json.load(file)
-        
-        #Check and parse the given JSON data.
-        try:
-            Book = dict()
-            users: List[Book] = [ValidateUser(**item) for item in datas]
-        except:
-            print("-"*50)
-            print("Try Again...")
-            print("-"*50)
-        else:
-            df_users = pd.DataFrame.from_dict(datas)
-            df_users.to_csv(file_output, index=True)
-
+    sample = pd.DataFrame.from_dict(results)
+    print(sample.head(10))
 
 if __name__ == "__main__":
     main()
-    
-    print("-"*50)
-    print("File Executed...")
-    print("-"*50)
